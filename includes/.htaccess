@@ -1,0 +1,3 @@
+# Defense in depth: never serve includes over HTTP.
+# PHP require/include from other scripts is unaffected.
+Require all denied

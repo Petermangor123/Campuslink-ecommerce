@@ -1,0 +1,33 @@
+Options -Indexes
+DirectoryIndex index.php
+
+# Block direct access to non-public file types and any dotfile (.env, .htaccess, .git*).
+<FilesMatch "(^\.|\.(sql|md|log|env|bak|ini|zip|sh|yml|yaml|lock|dist|old|orig|save|swp|swo)$|~$)">
+    Require all denied
+</FilesMatch>
+
+# Deny accidental cookie-jar / scrap artifacts dropped in the web root.
+<FilesMatch "^(-b|cookies\.txt)$">
+    Require all denied
+</FilesMatch>
+
+# Provisioning and schema repair must never be invoked over HTTP.
+<FilesMatch "^(setup_admin|setup_database)\.php$">
+    Require all denied
+</FilesMatch>
+
+# Deny sensitive directories (VCS, backups, SQL dumps, private storage, tooling, internals).
+# Application code still loads includes/ via filesystem require — not via HTTP.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule (^|/)\.(git|svn|hg)(/|$) - [F,L]
+    RewriteRule ^(backups|database|storage|vendor|node_modules|scripts|includes|docs|internal|config|deploy)(/|$) - [F,L]
+    # A nested copy of this project must never be served. This matches only a
+    # child directory, not the site when this folder itself is the document root.
+    RewriteRule ^CampusLink_Gr_17(/|$) - [F,L]
+</IfModule>
+
+# Only allow the HTTP methods the application actually uses.
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>

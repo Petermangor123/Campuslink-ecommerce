@@ -1,0 +1,41 @@
+# Example nginx snippets for CampusLink (adapt root / server_name / PHP socket).
+# Not applied automatically — copy rules into the host vhost.
+
+# server {
+#     listen 443 ssl http2;
+#     server_name your.domain.tld;
+#     root /var/www/campuslink;
+#     index index.php;
+#
+#     # Force HTTPS at the edge (also set CAMPUSLINK_PUBLIC_ORIGIN=https://...)
+#
+#     location ~ /\. {
+#         deny all;
+#     }
+#
+#     location ~* \.(sql|md|log|env|bak|ini|zip|sh|yml|yaml|lock|dist|old|orig|save)$ {
+#         deny all;
+#     }
+#
+#     location ~ ^/(backups|database|storage|vendor|node_modules|scripts|includes|docs|config)(/|$) {
+#         deny all;
+#     }
+#
+#     location = /-b {
+#         deny all;
+#     }
+#
+#     location / {
+#         try_files $uri $uri/ /index.php?$query_string;
+#     }
+#
+#     location ~ \.php$ {
+#         include fastcgi_params;
+#         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+#         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+#     }
+#
+#     location ~* ^/assets/uploads/.*\.(php|phtml|phar)$ {
+#         deny all;
+#     }
+# }

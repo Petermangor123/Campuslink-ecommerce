@@ -1,0 +1,4 @@
+# Block all web access to security logs and rate-limit state.
+# These files live outside the application's public assets and must never be
+# downloadable. Mirrors the deny rule used by /config/.htaccess.
+Require all denied

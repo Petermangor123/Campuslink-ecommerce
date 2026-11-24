@@ -1,0 +1,22 @@
+/assets/uploads/*
+!/assets/uploads/.htaccess
+!/assets/uploads/index.html
+/storage/*
+!/storage/.htaccess
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+# Accidental curl cookie jars / scrap files in the web root
+/-b
+/cookies.txt
+/*.jar
+# Local snapshots, dumps, and editor files. Not part of the running site.
+/backups/
+.idea/
+.vscode/
+*.log
+*.tmp
+*.swp
+*.swo

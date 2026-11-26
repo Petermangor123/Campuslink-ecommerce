@@ -42,28 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         set_flash('success', $to ? 'Product activated.' : 'Product deactivated. It is hidden from the marketplace.');
     } elseif ($action === 'delete') {
-        if (admin_product_has_order_lines($conn, $productId)) {
-            set_flash('error', 'This product appears on orders. Deactivate it instead of deleting.');
-        } else {
-            $img = (string)($product['image'] ?? '');
-            $d = $conn->prepare('DELETE FROM products WHERE id=? AND seller_id=?');
-            $d->bind_param('ii', $productId, $vendorId);
-            $d->execute();
-            $ok = $d->affected_rows > 0;
-            $d->close();
-            if ($ok) {
-                if ($img !== '') {
-                    $path = __DIR__ . '/../' . $img;
-                    if (is_file($path)) {
-                        @unlink($path);
-                    }
-                }
-                admin_audit_log($conn, $adminId, $vendorId, $productId, 'product_delete', $before, null);
-                set_flash('success', 'Product deleted.');
-            } else {
-                set_flash('error', 'Could not delete that product.');
-            }
+        $result = remove_vendor_product($conn, $productId, $vendorId);
+        if ($result['action'] === 'deleted') {
+            admin_audit_log($conn, $adminId, $vendorId, $productId, 'product_delete', $before, null);
+        } elseif ($result['action'] === 'deactivated') {
+            $product['is_active'] = 0;
+            admin_audit_log($conn, $adminId, $vendorId, $productId, 'product_deactivate', $before, admin_product_snapshot($product));
         }
+        set_flash($result['ok'] ? ($result['action'] === 'deleted' ? 'success' : 'info') : 'error', $result['message']);
     } else {
         set_flash('error', 'Unknown product action.');
     }
@@ -270,7 +256,7 @@ $dashActions = '<a class="btn btn-secondary btn-sm" href="' . APP_BASE_URL . '/a
                 <input type="hidden" name="vendor_id" value="<?= (int)$vendorId ?>">
                 <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
                 <button type="submit" name="listing_action" value="delete" class="btn btn-danger btn-sm"
-                        data-confirm="Permanently delete only if unused in orders. Prefer deactivate. Continue?">
+                        data-confirm="Permanently delete <?= htmlspecialchars((string)$p['title'], ENT_QUOTES) ?>? This is only possible when the product has never been ordered. If it appears on an order, it will be deactivated instead.">
                   Delete
                 </button>
               </form>

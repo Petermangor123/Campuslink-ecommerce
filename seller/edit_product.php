@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../includes/auth_guard.php';
 require_once __DIR__ . '/../includes/ui.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/admin_vendor.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') { verify_csrf(); }
 require_role('seller');
 
@@ -68,8 +69,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $stmt->execute();
         $stmt->close();
+        if ($replaceImage && !empty($product['image']) && (string)$product['image'] !== (string)$image_path) {
+            forget_unshared_product_image($conn, (string)$product['image'], $pid);
+        }
         set_flash('success', 'Product updated.');
         redirect(APP_BASE_URL . '/seller/my_products.php');
+    } elseif ($replaceImage && $image_path) {
+        forget_unshared_product_image($conn, (string)$image_path, 0);
     }
 } else {
     $title       = $product['title'];

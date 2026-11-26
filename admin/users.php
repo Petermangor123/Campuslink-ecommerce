@@ -11,8 +11,16 @@ require_role('admin');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_active'], $_POST['user_id'])) {
     $uid = (int)$_POST['user_id'];
     $to  = (int)$_POST['toggle_active'] === 1 ? 1 : 0;
+    $target = $conn->prepare('SELECT role, is_active FROM users WHERE id=? LIMIT 1');
+    $target->bind_param('i', $uid);
+    $target->execute();
+    $account = $target->get_result()->fetch_assoc();
+    $target->close();
+    $activeAdmins = (int)$conn->query("SELECT COUNT(*) AS c FROM users WHERE role='admin' AND is_active=1")->fetch_assoc()['c'];
     if ($uid === current_user_id()) {
         set_flash('error', 'You cannot deactivate your own administrator account.');
+    } elseif ($account && $account['role'] === 'admin' && (int)$account['is_active'] === 1 && $to === 0 && $activeAdmins <= 1) {
+        set_flash('error', 'The last active administrator account cannot be deactivated.');
     } else {
         $stmt = $conn->prepare('UPDATE users SET is_active = ? WHERE id = ?');
         $stmt->bind_param('ii', $to, $uid);
@@ -31,7 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_active'], $_PO
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role']) && !isset($_POST['toggle_active'])) {
     $uid  = (int)$_POST['user_id'];
     $role = (string)$_POST['role'];
-    if (in_array($role, ['buyer', 'seller', 'admin'], true) && $uid !== current_user_id()) {
+    $current = $conn->prepare('SELECT role, is_active FROM users WHERE id=? LIMIT 1');
+    $current->bind_param('i', $uid);
+    $current->execute();
+    $account = $current->get_result()->fetch_assoc();
+    $current->close();
+    $activeAdmins = (int)$conn->query("SELECT COUNT(*) AS c FROM users WHERE role='admin' AND is_active=1")->fetch_assoc()['c'];
+    $removesLastAdmin = $account
+        && $account['role'] === 'admin'
+        && (int)$account['is_active'] === 1
+        && $role !== 'admin'
+        && $activeAdmins <= 1;
+    if (in_array($role, ['buyer', 'seller', 'admin'], true) && $uid !== current_user_id() && !$removesLastAdmin) {
         $stmt = $conn->prepare('UPDATE users SET role = ? WHERE id = ?');
         $stmt->bind_param('si', $role, $uid);
         $stmt->execute();
@@ -39,6 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['ro
         set_flash('success', 'Role updated.');
     } elseif ($uid === current_user_id()) {
         set_flash('error', 'You cannot change your own role here.');
+    } elseif ($removesLastAdmin) {
+        set_flash('error', 'The last active administrator cannot be changed to another role.');
     }
     redirect(APP_BASE_URL . '/admin/users.php');
 }

@@ -39,8 +39,8 @@ When valid Paystack keys are configured, checkout is verified with Paystack; amo
 | Visitor | Browse the catalog, search and filter products, view product details, and open the guest checkout flow. |
 | Guest buyer | Place an order without registering and track it using the order reference and private tracking token. |
 | Buyer | Maintain a cart and profile, place orders, view order history, and open owned order details. |
-| Seller / vendor | After administrator approval, create and edit owned products, review owned order lines, and update fulfilment status. |
-| Administrator | Manage users, vendor approvals, products, orders, payments, refunds, disputes, settlements, ledger entries, and reports. |
+| Seller / vendor | After administrator approval, create and edit owned products, activate or deactivate listings, delete a listing only when it has never been ordered, review owned order lines, and update fulfilment status. |
+| Administrator | Manage users, vendor approvals, products, orders, payments, the marketplace commission rate, refunds, disputes, settlements, ledger entries, and reports. The last active administrator cannot be deactivated or demoted. |
 
 ## Key features
 
@@ -51,7 +51,9 @@ When valid Paystack keys are configured, checkout is verified with Paystack; amo
 - Seller product create, edit, and order view after administrator approval
 - Administrator vendor approval, rejection, suspension, user, product, and order management
 - CSRF checks, prepared SQL statements, upload checks, and role-based access control
+- Homepage featured products, recent listings, popular products, and category counts loaded from the database
 - Partial/full refunds, vendor commission snapshots, offline settlement records, disputes/chargebacks, and balanced financial audit entries
+- Administrator-managed commission rate stored in `marketplace_settings`, snapshotted onto new order lines only
 - Admin and seller CSV statements with spreadsheet-formula neutralization
 
 ## Technology stack
@@ -87,7 +89,7 @@ CampusLink_Gr_17-university-deploy/
 ├── auth/                             # Login, registration, logout
 ├── buyer/                            # Profile, cart, checkout, orders
 ├── seller/                           # Products, sales, orders, fulfilment
-├── admin/                            # Users, vendors, orders, finance, reports
+├── admin/                            # Users, vendors, orders, commission, finance, reports
 ├── includes/                         # Shared services, guards, cart, catalog, payment logic
 ├── config/
 │   └── db.php                        # Environment-aware MySQL connection
@@ -174,7 +176,7 @@ Copy `.env.example` to `.env` and replace placeholders locally or on the server.
 | `PAYSTACK_CURRENCY` | Gateway currency, normally `GHS`. |
 | `CAMPUSLINK_CURRENCY` | Application currency code, normally `GHS`. |
 | `CAMPUSLINK_CURRENCY_NAME` | Display currency name, normally `Ghana Cedi`. |
-| `CAMPUSLINK_COMMISSION_BPS` | Marketplace commission rate in basis points. |
+| `CAMPUSLINK_COMMISSION_BPS` | Fallback commission rate in basis points (500 = 5%). A saved `marketplace_settings.commission_bps` row overrides it for new orders. |
 
 The application detects its base path from the document root. `CAMPUSLINK_BASE_URL` appears in the template but is not consumed by the current session/base-path implementation; configure the document root and `CAMPUSLINK_PUBLIC_ORIGIN` correctly instead.
 
@@ -284,12 +286,15 @@ This repository does not contact or deploy to a university server, import a live
 - Email uses PHP `mail()` and depends on host-level mail/SMTP configuration; there is no in-application SMTP settings screen.
 - Apache `.htaccess` protections do not apply to nginx unless equivalent rules are configured manually.
 - Google Fonts require browser internet access; local font fallbacks are used when unavailable.
-- The included administration test is fixture-dependent, and the repository does not contain a comprehensive automated end-to-end browser test suite.
+- The included administration test is fixture-dependent and writes temporary product rows. Run it only against a disposable database. The repository does not contain a comprehensive automated end-to-end browser test suite.
+- Databases created before migration 013 do not have `marketplace_settings` until that migration is applied. Until then, commission stays on the environment fallback and the admin commission screen cannot save a rate.
+- Deleting a product that already appears on an order deactivates it instead. Order history is kept.
 - No live `.env`, Paystack credentials, database password, or administrator password is shipped.
 - Base-path detection depends on a correct document-root layout; deployments in unusual subpath arrangements require verification of generated links and callback URLs.
 
 ## Additional documentation
 
+- `CAMPUSLINK_CHANGELOG.md` — verified changes since the previous GitHub submission
 - `database/README.md` — schema contents and migration order
 - `docs/CAMPUSLINK_DEPLOYMENT_CHECKLIST.md` — production and security checklist
 - `docs/CAMPUSLINK_PLATFORM_UX_STANDARDIZATION.md` — interface conventions

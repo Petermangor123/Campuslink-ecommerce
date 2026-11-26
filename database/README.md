@@ -14,6 +14,7 @@ The script creates the database `ecommerce_2026A_chol_thiong` and these tables:
 - `notifications` — in-app alerts for buyers and sellers
 - `payments` — live `manual_review`; optional Paystack columns when configured
 - `payment_events` — Paystack webhook idempotency / claim–apply–fail (`process_status`)
+- `marketplace_settings` — administrator commission rate (`commission_bps`); absent until migration 013 or a current schema import
 
 `CREATE DATABASE` and `CREATE TABLE IF NOT EXISTS` are used, so importing again does not drop existing rows. It also does not repair a database that was created from an older schema. Do not edit table or column names to match a folder rename.
 
@@ -39,8 +40,9 @@ Apply in order when upgrading an older local DB:
 10. `migrations/010_payments_gateway_reference_unique.sql` — `payments.updated_at` if missing, and a unique key on `gateway_reference`. Does not change amounts or statuses.
 11. `migrations/011_payment_operations.sql` — refunds, payouts, disputes, and balanced financial records.
 12. `migrations/012_vendor_approval.sql` — `users.vendor_status`; existing sellers become pending and require administrator approval.
+13. `migrations/013_marketplace_commission.sql` — `marketplace_settings` for the admin commission rate. Does not change existing orders, refunds, or ledger rows. Until an administrator saves a rate, `CAMPUSLINK_COMMISSION_BPS` remains the fallback.
 
-Fresh installs from the current `campuslink.sql` already include user `is_active` and `vendor_status`, product `is_active`, `admin_audit_log`, `order_ref_seq`, fulfilment columns, payment-operation tables, `payment_events` (with process columns), and do not include TOTP columns.
+Fresh installs from the current `campuslink.sql` already include user `is_active` and `vendor_status`, product `is_active`, `admin_audit_log`, `order_ref_seq`, fulfilment columns, payment-operation tables, `payment_events` (with process columns), `marketplace_settings`, and do not include TOTP columns.
 
 ### Hosting commands (example)
 

@@ -133,6 +133,7 @@ $dashSub   = 'Marketplace control centre · ' . date('D, M j');
   <?= ui_shortcut(['href' => APP_BASE_URL . '/admin/orders.php', 'icon' => 'orders', 'label' => 'Orders', 'hint' => 'Fulfilment oversight']) ?>
   <?= ui_shortcut(['href' => APP_BASE_URL . '/admin/payments.php', 'icon' => 'card', 'label' => 'Payments', 'hint' => 'Paystack and campus']) ?>
   <?= ui_shortcut(['href' => APP_BASE_URL . '/admin/reports.php', 'icon' => 'trending', 'label' => 'Analytics & Reports', 'hint' => 'Live marketplace figures']) ?>
+  <?= ui_shortcut(['href' => APP_BASE_URL . '/admin/commission.php', 'icon' => 'sliders', 'label' => 'Commission', 'hint' => number_format(marketplace_commission_bps() / 100, 2) . '% on new orders']) ?>
 </div>
 
 <div class="two-col">

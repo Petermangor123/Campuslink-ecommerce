@@ -125,7 +125,7 @@ if ($isDash) {
   <form class="nav-search" role="search" action="<?= APP_BASE_URL ?>/public/browse.php" method="get">
     <label class="sr-only" for="navSearch">Search products</label>
     <?= ui_icon('search') ?>
-    <input type="search" id="navSearch" name="q" placeholder="Search products, vendors or categories"
+    <input type="search" id="navSearch" name="q" placeholder="Search products..."
            value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" autocomplete="off">
     <button type="submit">Search</button>
   </form>
@@ -239,7 +239,7 @@ if ($isDash) {
   <form class="nav-search-mobile" role="search" action="<?= APP_BASE_URL ?>/public/browse.php" method="get">
     <label class="sr-only" for="navSearchM">Search products</label>
     <?= ui_icon('search') ?>
-    <input type="search" id="navSearchM" name="q" placeholder="Search products, vendors or categories"
+    <input type="search" id="navSearchM" name="q" placeholder="Search products..."
            value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" autocomplete="off">
     <button type="submit" aria-label="Search"><?= ui_icon('search', 'icn-sm') ?></button>
   </form>

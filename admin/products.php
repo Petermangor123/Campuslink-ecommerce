@@ -29,22 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'], $_POST[
             admin_audit_log($conn, current_user_id(), $vendorId, $pid, $to ? 'product_activate' : 'product_deactivate', $before, admin_product_snapshot($row));
             set_flash('success', $to ? 'Product activated.' : 'Product deactivated.');
         } elseif ($action === 'delete') {
-            if (admin_product_has_order_lines($conn, $pid)) {
-                set_flash('error', 'Product appears on orders — deactivate instead of deleting.');
-            } else {
-                $d = $conn->prepare('DELETE FROM products WHERE id=?');
-                $d->bind_param('i', $pid);
-                $d->execute();
-                $d->close();
-                if (!empty($row['image'])) {
-                    $imgFile = __DIR__ . '/../' . $row['image'];
-                    if (is_file($imgFile)) {
-                        @unlink($imgFile);
-                    }
-                }
+            $result = remove_vendor_product($conn, $pid, $vendorId);
+            if ($result['action'] === 'deleted') {
                 admin_audit_log($conn, current_user_id(), $vendorId, $pid, 'product_delete', $before, null);
-                set_flash('success', 'Product deleted.');
+            } elseif ($result['action'] === 'deactivated') {
+                $row['is_active'] = 0;
+                admin_audit_log($conn, current_user_id(), $vendorId, $pid, 'product_deactivate', $before, admin_product_snapshot($row));
             }
+            set_flash($result['ok'] ? ($result['action'] === 'deleted' ? 'success' : 'info') : 'error', $result['message']);
         }
     }
     redirect(APP_BASE_URL . '/admin/products.php');

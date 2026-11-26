@@ -1464,6 +1464,9 @@ function apply_refund_status(mysqli $conn, int $refundId, string $status, string
         if ($refund['status'] === 'processed' && $status !== 'processed') {
             throw new RuntimeException('A processed refund cannot be reversed by a webhook.');
         }
+        if ($status === 'processed' && $refund['status'] !== 'processed') {
+            post_refund_processed($conn, $refundId, null, $gatewayReference !== '' ? $gatewayReference : $gatewayId);
+        }
         $upd = $conn->prepare(
             "UPDATE refunds SET status=?, failure_reason=NULLIF(?, ''), gateway_refund_id=COALESCE(NULLIF(?, ''),gateway_refund_id),
              gateway_reference=COALESCE(NULLIF(?, ''),gateway_reference), processed_at=IF(?='processed',COALESCE(processed_at,NOW()),processed_at),
@@ -1472,9 +1475,7 @@ function apply_refund_status(mysqli $conn, int $refundId, string $status, string
         $upd->bind_param('ssssssi', $status, $failureReason, $gatewayId, $gatewayReference, $status, $status, $refundId);
         $upd->execute();
         $upd->close();
-        if ($status === 'processed') {
-            post_refund_processed($conn, $refundId, null, $gatewayReference !== '' ? $gatewayReference : $gatewayId);
-        } elseif (in_array($status, ['failed', 'cancelled'], true)) {
+        if (in_array($status, ['failed', 'cancelled'], true)) {
             $refund['status'] = $status;
         }
         refresh_payment_refund_summary($conn, (int)$refund['payment_id']);
@@ -1980,6 +1981,7 @@ if (PHP_SAPI === 'cli' && ($scriptPath = realpath($_SERVER['SCRIPT_FILENAME'] ??
     $migrationFiles = [
         __DIR__ . '/../database/migrations/011_payment_operations.sql',
         __DIR__ . '/../database/migrations/012_vendor_approval.sql',
+        __DIR__ . '/../database/migrations/013_marketplace_commission.sql',
     ];
     try {
         foreach ($migrationFiles as $migrationFile) {
@@ -2005,7 +2007,7 @@ if (PHP_SAPI === 'cli' && ($scriptPath = realpath($_SERVER['SCRIPT_FILENAME'] ??
     }
 
     if (in_array('--migrate', $argv, true)) {
-        echo "Payment operations and vendor approval migrations applied.\n";
+        echo "Payment operations, vendor approval, and commission setting migrations applied.\n";
         exit(0);
     }
 

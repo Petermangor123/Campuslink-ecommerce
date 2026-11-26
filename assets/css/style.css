@@ -2502,11 +2502,13 @@ body.has-dash .site-footer { display: none; }
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .12));
 }
 .navbar-market .nav-search {
-  flex: 1 1 300px;
-  max-width: 560px;
+  flex: 1 1 18rem;
+  flex-shrink: 1;
+  min-width: 16.25rem;
+  max-width: 34rem;
   min-height: 46px;
-  gap: .45rem;
-  padding: .28rem .3rem .28rem .85rem;
+  gap: .4rem;
+  padding: .28rem .3rem .28rem .75rem;
   background: #fff;
   border: 1px solid rgba(255, 255, 255, .55);
   border-radius: 12px;
@@ -2516,23 +2518,30 @@ body.has-dash .site-footer { display: none; }
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(242, 198, 109, .35);
 }
-.navbar-market .nav-search .icn { color: var(--muted); flex-shrink: 0; }
+.navbar-market .nav-search .icn { color: var(--muted); flex-shrink: 0; align-self: center; }
 .navbar-market .nav-search input {
+  flex: 1 1 auto;
+  min-width: 9rem;
+  width: 100%;
   font-size: .92rem;
   font-weight: 500;
   color: var(--ink);
+  text-overflow: ellipsis;
 }
 .site-head .navbar-market .nav-search button,
 .navbar-market .nav-search button {
+  flex: 0 0 auto;
   background: #F2C66D;
   background: var(--accent);
   color: #0C2A23;
   color: var(--forest-900);
   border-radius: 10px;
-  padding: .5rem 1.05rem;
-  font-size: .82rem;
+  padding: .42rem .75rem;
+  font-size: .8rem;
   font-weight: 700;
+  line-height: 1.15;
   letter-spacing: .01em;
+  white-space: nowrap;
   box-shadow: none;
 }
 .site-head .navbar-market .nav-search button:hover,
@@ -2652,6 +2661,41 @@ body.has-dash .site-footer { display: none; }
 .navbar-market .nav-search-mobile button:hover {
   background: var(--accent-700);
   color: var(--forest-900);
+}
+
+/* Full desktop nav is visible above 1180px. Tighten gaps there so the
+   search field can keep a readable width without overlapping the links. */
+@media (max-width: 1400px) and (min-width: 1181px) {
+  .site-head .navbar.navbar-market {
+    gap: .4rem;
+    padding-inline: .85rem;
+  }
+  .site-head .navbar-market .brand-logo {
+    width: 124px;
+  }
+  .site-head .navbar-market .nav-link {
+    padding: .4rem .4rem;
+    gap: .22rem;
+    font-size: .8rem;
+  }
+  .site-head .navbar-market .nav-actions {
+    gap: .12rem;
+  }
+  .site-head .navbar-market .nav-sell.btn,
+  .site-head .navbar-market .nav-register.btn {
+    padding: .38rem .5rem;
+    font-size: .74rem;
+  }
+  .site-head .navbar-market .nav-search {
+    min-width: 15rem;
+    flex-basis: 15rem;
+    gap: .3rem;
+    padding-left: .6rem;
+  }
+  .site-head .navbar-market .nav-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
 }
 
 .catnav {

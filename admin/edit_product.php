@@ -52,19 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $image_path = $product['image'];
+    $replaceImage = false;
     if (!empty($_FILES['image']['name'])) {
         $uploadError = null;
         $storedName  = sec_store_image($_FILES['image'], __DIR__ . '/../assets/uploads/', $uploadError);
         if ($storedName === null) {
             $errors[] = $uploadError ?: 'Image could not be uploaded.';
         } else {
-            if ($product['image']) {
-                $old = __DIR__ . '/../' . $product['image'];
-                if (is_file($old)) {
-                    @unlink($old);
-                }
-            }
             $image_path = 'assets/uploads/' . $storedName;
+            $replaceImage = true;
         }
     }
 
@@ -84,6 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('issdiisii', $cat, $title, $desc, $pv, $sv, $isActive, $image_path, $pid, $ownerId);
         $stmt->execute();
         $stmt->close();
+        if ($replaceImage && !empty($product['image']) && (string)$product['image'] !== (string)$image_path) {
+            forget_unshared_product_image($conn, (string)$product['image'], $pid);
+        }
 
         $after = [
             'id' => $pid,
@@ -121,6 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(APP_BASE_URL . '/admin/vendor_view.php?id=' . $returnVendorId);
         }
         redirect(APP_BASE_URL . '/admin/products.php');
+    } elseif ($replaceImage) {
+        forget_unshared_product_image($conn, (string)$image_path, 0);
     }
 } else {
     $title       = $product['title'];

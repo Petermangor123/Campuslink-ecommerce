@@ -3,21 +3,26 @@
 require_once __DIR__ . '/../includes/auth_guard.php';
 require_once __DIR__ . '/../includes/ui.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/admin_vendor.php';
 require_role('seller');
 
 $uid = current_user_id();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_product'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $pid  = (int)$_POST['delete_product'];
-    $stmt = $conn->prepare('SELECT id FROM products WHERE id=? AND seller_id=?');
-    $stmt->bind_param('ii',$pid,$uid); $stmt->execute(); $stmt->store_result();
-    if ($stmt->num_rows > 0) {
-        $stmt->close();
-        $d = $conn->prepare('DELETE FROM products WHERE id=?');
-        $d->bind_param('i',$pid); $d->execute(); $d->close();
-        set_flash('success','Product deleted.');
-    } else { $stmt->close(); }
+    $pid = (int)($_POST['product_id'] ?? $_POST['delete_product'] ?? 0);
+    try {
+        if (isset($_POST['delete_product']) || (($_POST['listing_action'] ?? '') === 'delete')) {
+            $result = remove_vendor_product($conn, $pid, $uid);
+            set_flash($result['ok'] ? ($result['action'] === 'deleted' ? 'success' : 'info') : 'error', $result['message']);
+        } elseif (in_array((string)($_POST['listing_action'] ?? ''), ['activate', 'deactivate'], true)) {
+            $result = set_vendor_product_active($conn, $pid, $uid, $_POST['listing_action'] === 'activate');
+            set_flash($result['ok'] ? 'success' : 'error', $result['message']);
+        }
+    } catch (Throwable $e) {
+        error_log('CampusLink product removal failed: ' . $e->getMessage());
+        set_flash('error', 'That product could not be changed. Please try again.');
+    }
     redirect(APP_BASE_URL . '/seller/my_products.php');
 }
 
@@ -77,13 +82,23 @@ $dashActions = '<a href="' . APP_BASE_URL . '/seller/add_product.php" class="btn
                         <td><?= (int)($p['is_active'] ?? 1) === 1 ? ui_badge('paid', 'Active', false) : ui_badge('cancelled', 'Inactive', false) ?></td>
                         <td class="text-muted"><?= date('M j, Y', strtotime($p['created_at'])) ?></td>
                         <td class="table-actions">
+                            <?php $on = (int)($p['is_active'] ?? 1) === 1; ?>
                             <a href="<?= APP_BASE_URL ?>/seller/edit_product.php?id=<?= (int)$p['id'] ?>"
                                class="btn btn-secondary btn-sm"><?= ui_icon('pencil', 'icn-sm') ?> Edit</a>
                             <form method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
+                                <button type="submit" name="listing_action" value="<?= $on ? 'deactivate' : 'activate' ?>"
+                                        class="btn btn-secondary btn-sm"
+                                        data-confirm="<?= $on ? 'Deactivate this product? It will be hidden from the marketplace. Orders that already include it stay unchanged.' : 'Activate this product and show it on the marketplace again?' ?>">
+                                    <?= $on ? 'Deactivate' : 'Activate' ?>
+                                </button>
+                            </form>
+                            <form method="POST">
+                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                 <button type="submit" name="delete_product" value="<?= (int)$p['id'] ?>"
                                         class="btn btn-danger btn-sm"
-                                        data-confirm="Delete this product? This cannot be undone."><?= ui_icon('trash', 'icn-sm') ?> Delete</button>
+                                        data-confirm="Permanently delete <?= htmlspecialchars((string)$p['title'], ENT_QUOTES) ?>? This is only possible when the product has never been ordered. If it appears on an order, it will be deactivated instead."><?= ui_icon('trash', 'icn-sm') ?> Delete</button>
                             </form>
                         </td>
                     </tr>

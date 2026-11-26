@@ -411,6 +411,18 @@ CREATE TABLE IF NOT EXISTS `financial_entries` (
         FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- MARKETPLACE SETTINGS (commission rate). Empty until an administrator saves one.
+CREATE TABLE IF NOT EXISTS `marketplace_settings` (
+    `setting_key` VARCHAR(64) NOT NULL,
+    `setting_value` VARCHAR(255) NOT NULL,
+    `updated_by` INT UNSIGNED DEFAULT NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`setting_key`),
+    KEY `idx_marketplace_settings_updated_by` (`updated_by`),
+    CONSTRAINT `fk_marketplace_settings_updated_by`
+        FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Seed categories

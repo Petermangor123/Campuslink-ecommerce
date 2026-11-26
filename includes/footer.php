@@ -101,6 +101,7 @@ $role = is_logged_in() ? current_user_role() : '';
           <li><a href="<?= APP_BASE_URL ?>/admin/orders.php">Orders</a></li>
           <li><a href="<?= APP_BASE_URL ?>/admin/vendors.php">Vendor Management</a></li>
           <li><a href="<?= APP_BASE_URL ?>/admin/users.php">Users</a></li>
+          <li><a href="<?= APP_BASE_URL ?>/admin/commission.php">Commission</a></li>
         <?php else: ?>
           <li><a href="<?= APP_BASE_URL ?>/auth/login.php">Sign in</a></li>
           <li><a href="<?= APP_BASE_URL ?>/auth/register.php">Create account</a></li>

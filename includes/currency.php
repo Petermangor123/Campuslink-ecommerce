@@ -70,8 +70,82 @@ function app_payment_currency(): string {
     return app_currency_iso();
 }
 
-/** Commission percentage snapshotted on each order line, in basis points. */
-function marketplace_commission_bps(): int {
+/**
+ * Environment fallback for the commission rate, in basis points.
+ * 500 = 5%. Used only when marketplace_settings has no commission_bps row.
+ */
+function marketplace_commission_bps_from_environment(): int {
     $bps = filter_var(sec_env('CAMPUSLINK_COMMISSION_BPS', '0'), FILTER_VALIDATE_INT);
-    return max(0, min(10000, $bps === false ? 0 : $bps));
+    return max(0, min(10000, $bps === false ? 0 : (int)$bps));
+}
+
+function marketplace_settings_table_ready(?mysqli $conn = null): bool {
+    static $ready = false;
+    if ($ready) {
+        return true;
+    }
+    if (!$conn instanceof mysqli) {
+        $conn = ($GLOBALS['conn'] ?? null) instanceof mysqli ? $GLOBALS['conn'] : null;
+    }
+    if (!$conn instanceof mysqli) {
+        return false;
+    }
+    $result = $conn->query(
+        "SELECT 1 FROM information_schema.tables
+         WHERE table_schema = DATABASE() AND table_name = 'marketplace_settings' LIMIT 1"
+    );
+    $ready = $result instanceof mysqli_result && $result->num_rows === 1;
+    if ($result instanceof mysqli_result) {
+        $result->free();
+    }
+    return $ready;
+}
+
+/**
+ * Active commission rate in basis points.
+ *
+ * Precedence:
+ * 1. marketplace_settings.commission_bps when that row exists and is an integer
+ * 2. CAMPUSLINK_COMMISSION_BPS from the environment
+ * 3. 0
+ *
+ * Order creation snapshots the returned value. This function does not update
+ * existing order lines.
+ */
+function marketplace_commission_bps(): int {
+    $conn = ($GLOBALS['conn'] ?? null) instanceof mysqli ? $GLOBALS['conn'] : null;
+    if ($conn instanceof mysqli && marketplace_settings_table_ready($conn)) {
+        $stmt = $conn->prepare(
+            "SELECT setting_value FROM marketplace_settings WHERE setting_key = 'commission_bps' LIMIT 1"
+        );
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($row) {
+            $bps = filter_var($row['setting_value'], FILTER_VALIDATE_INT);
+            if ($bps !== false) {
+                return max(0, min(10000, (int)$bps));
+            }
+        }
+    }
+    return marketplace_commission_bps_from_environment();
+}
+
+/**
+ * Parse an administrator-entered percent. Accepts 0 through 100 with at most
+ * two decimal places. Returns basis points (5% = 500).
+ */
+function marketplace_commission_bps_from_percent(string $raw): int {
+    $raw = trim($raw);
+    if (!preg_match('/^(?:100(?:\.0{1,2})?|[0-9]{1,2}(?:\.[0-9]{1,2})?)$/', $raw)) {
+        throw new InvalidArgumentException('Enter a commission rate from 0 to 100 percent, with at most two decimal places.');
+    }
+    $parts = explode('.', $raw, 2);
+    $whole = (int)$parts[0];
+    $fraction = str_pad($parts[1] ?? '', 2, '0');
+    $bps = ($whole * 100) + (int)$fraction;
+    if ($bps < 0 || $bps > 10000) {
+        throw new InvalidArgumentException('Enter a commission rate from 0 to 100 percent.');
+    }
+    return $bps;
 }

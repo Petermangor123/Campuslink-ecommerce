@@ -433,6 +433,7 @@ if (!function_exists('ui_icon')) {
                 ['Refunds',            APP_BASE_URL . '/admin/refunds.php',   'refresh',   '/admin/refunds.php'],
                 ['Disputes',           APP_BASE_URL . '/admin/disputes.php',  'shield',    '/admin/disputes.php'],
                 ['Settlements',        APP_BASE_URL . '/admin/settlements.php', 'dollar',  '/admin/settlements.php'],
+                ['Commission',         APP_BASE_URL . '/admin/commission.php', 'sliders', '/admin/commission.php'],
                 ['Financial Ledger',  APP_BASE_URL . '/admin/ledger.php',      'book',    '/admin/ledger.php'],
                 ['Products',           APP_BASE_URL . '/admin/products.php',  'package',   '/admin/products.php', ['/admin/add_product.php', '/admin/edit_product.php']],
                 ['Vendor Management',  APP_BASE_URL . '/admin/vendors.php',   'store',     '/admin/vendors.php', ['/admin/vendor_view.php', '/admin/sellers.php']],
